@@ -14,26 +14,35 @@ long duration;
 
 
 void getDistance(){ 
- 
- /* The following trigPin/echoPin cycle is used to determine the
- distance of the nearest object by bouncing soundwaves off of it. */ 
- digitalWrite(trigPin, LOW); 
- delayMicroseconds(2); 
-
- digitalWrite(trigPin, HIGH);
- delayMicroseconds(10); 
- 
- digitalWrite(trigPin, LOW);
- duration = pulseIn(echoPin, HIGH);
-
- //Calculate the distance (in cm) based on the speed of sound.
- HR_dist = duration/58.2;
- 
+  long duration, distance;
+  digitalWrite(trigPin, LOW);  // Added this line
+  delayMicroseconds(2); // Added this line
+  digitalWrite(trigPin, HIGH);
+//  delayMicroseconds(1000); - Removed this line
+  delayMicroseconds(10); // Added this line
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = (duration/2) / 29.1;
+  if (distance < 4) {  // This is where the LED On/Off happens
+    //digitalWrite(led,HIGH); // When the Red condition is met, the Green LED should turn off
+    //digitalWrite(led2,LOW);
+}
+  else {
+    //digitalWrite(led,LOW);
+    //digitalWrite(led2,HIGH);
+  }
+  if (distance >= 200 || distance <= 0){
+    Serial.println("Out of range");
+  }
+  else {
+    Serial.print(distance);
+    Serial.println(" cm");
+  }
+  delay(500);
 }
 
 void loop()
 {
   getDistance();
-  Serial.println(HR_dist);
 }
 
