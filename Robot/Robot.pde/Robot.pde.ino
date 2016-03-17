@@ -1,75 +1,39 @@
-//void setup() {
-//  // put your setup code here, to run once:
-//  Serial.begin(9600);
-//}
-//
-//void loop() {
-//  // put your main code here, to run repeatedly:
-//
-//  Serial.println(analogRead(160));
-//}
-
-const int trigPin = 0xA0;
-const int echoPin = 0xA1;
+const int trigPin = A0;
+const int echoPin = A1;
 
 void setup() {
   // initialize serial communication:
   Serial.begin(9600);
+  
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+}
+
+long HR_dist=0;
+long duration;
+
+
+void getDistance(){ 
+ 
+ /* The following trigPin/echoPin cycle is used to determine the
+ distance of the nearest object by bouncing soundwaves off of it. */ 
+ digitalWrite(trigPin, LOW); 
+ delayMicroseconds(2); 
+
+ digitalWrite(trigPin, HIGH);
+ delayMicroseconds(10); 
+ 
+ digitalWrite(trigPin, LOW);
+ duration = pulseIn(echoPin, HIGH);
+
+ //Calculate the distance (in cm) based on the speed of sound.
+ HR_dist = duration/58.2;
+ 
 }
 
 void loop()
 {
-  // establish variables for duration of the ping, 
-  // and the distance result in inches and centimeters:
-  long duration, inches, cm;
-
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  pinMode(trigPin, OUTPUT);
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  
- //Serial.print((String)analogRead(trigPin) + " analogRead(trigPin), ");
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  pinMode(trigPin, INPUT);
-
- 
-  duration = pulseIn(echoPin, LOW);
-
-  //Serial.print((String)analogRead(echoPin) + " analogRead(echoPin), ");
-  Serial.print((String)duration + "ms, ");
-
-  // convert the time into a distance
-  //inches = microsecondsToInches(duration);
-  cm = microsecondsToCentimeters(duration);
-  
-  //Serial.print(inches);
-  //Serial.print("in, ");
-  Serial.print((String) cm + "cm");
-  Serial.println();
-  
-  delay(100);
+  getDistance();
+  Serial.println(HR_dist);
 }
 
-long microsecondsToInches(long microseconds)
-{
-  // According to Parallax's datasheet for the PING))), there are
-  // 73.746 microseconds per inch (i.e. sound travels at 1130 feet per
-  // second).  This gives the distance travelled by the ping, outbound
-  // and return, so we divide by 2 to get the distance of the obstacle.
-  // See: http://www.parallax.com/dl/docs/prod/acc/28015-PING-v1.3.pdf
-  return microseconds / 74 / 2;
-}
-
-long microsecondsToCentimeters(long microseconds)
-{
-  // The speed of sound is 340 m/s or 29 microseconds per centimeter.
-  // The ping travels out and back, so to find the distance of the
-  // object we take half of the distance travelled.
-  return microseconds / 29;
-}
