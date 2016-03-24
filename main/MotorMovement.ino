@@ -1,5 +1,5 @@
 
-int speed = 130;
+int speed = 255;
 void motorAOn()
 {
  analogWrite(enableA, speed);

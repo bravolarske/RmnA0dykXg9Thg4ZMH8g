@@ -1,3 +1,12 @@
+ #include <Servo.h>
+
+ 
+
+//SERVO
+int pinServo = 9;
+
+int pos = 0;    // variable to store the servo position
+Servo myservo;  // create servo object to control a servo
 
 long timerOrigin;
 //PINNEN
@@ -45,7 +54,7 @@ void setup() {
  pinMode(enableA, OUTPUT);
  pinMode(pinA1, OUTPUT);
  pinMode(pinA2, OUTPUT);
- 
+
  pinMode(enableB, OUTPUT);
  pinMode(pinB1, OUTPUT);
  pinMode(pinB2, OUTPUT);
@@ -53,17 +62,13 @@ void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   pinMode(9, OUTPUT); 
+  
+  myservo.attach(pinServo);
+  
+  
 }
 bool stop = false;
 void loop() {
-  
-  Serial.println("SET BT PAGEMODE 3 2000 1");
-  Serial.println("SET BT NAME ARDUINOBT");
-  Serial.println("SET BT ROLE 0 f 7d00");
-  Serial.println("SET CONTROL ECHO 0");
-  Serial.println("SET BT AUTH * 12345");
-  Serial.println("SET CONTROL ESCAPE - 00 1");
-  Serial.println("SET CONTROL BAUD 115200,8n1"); 
   
    enableMotors();
    lichtsensor1 = digitalRead(7);
@@ -71,7 +76,7 @@ void loop() {
    lichtsensor3 = digitalRead(3);
 
    int byte =Serial.read();
-    
+   
    if(byte == 's' || stop == true){
     brake(10000);
       Serial.println("Stop");
