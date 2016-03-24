@@ -1,12 +1,13 @@
 
+int speed = 130;
 void motorAOn()
 {
- analogWrite(enableA, 255);
+ analogWrite(enableA, speed);
 }
  
 void motorBOn()
 {
-   digitalWrite(enableB, 255);
+   digitalWrite(enableB, speed);
 }
  
  //disable motors
