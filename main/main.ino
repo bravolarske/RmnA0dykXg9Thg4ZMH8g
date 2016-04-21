@@ -1,7 +1,5 @@
  #include <Servo.h>
-
- 
-
+#include "NewPing.h"
 //SERVO
 int pinServo = 9;
 
@@ -22,6 +20,9 @@ long timerOrigin;
  int pinB2 = 11;//Define Run variable
 
  
+bool stop = false;
+bool autonoom=true;
+
 #define trigPin A0
 #define echoPin A1
 
@@ -36,11 +37,11 @@ int lichtsensor1 = 0;
 int lichtsensor2 = 0;
 int lichtsensor3 = 0;
 
-
 //MOTOR VALUES
 
 //ULTRA SONAR VALUES
 long duration, distance;
+NewPing sonar(trigPin,echoPin,1500);
 
 void setup() {
   // put your setup code here, to run once: 
@@ -64,41 +65,249 @@ void setup() {
   pinMode(9, OUTPUT); 
   
   myservo.attach(pinServo);
-  
-  
 }
-bool stop = false;
+bool followingline = false;
+
 void loop() {
-  
+  Serial.println("{\"autonoom\":"+String(autonoom)+",\"distance\":"+String(distance)+",\"followingline\":"+String(followingline)+"}");
    enableMotors();
    lichtsensor1 = digitalRead(7);
    lichtsensor2 = digitalRead(4);
    lichtsensor3 = digitalRead(3);
+   
+   int ibyte =Serial.read();
+   if(ibyte=='m' ||ibyte=='M')
+   {
+    autonoom=false;
+   }
+   if(ibyte=='o'||ibyte=='O')
+   {
+    autonoom=true;
+   }
 
-   int byte =Serial.read();
-   
-   if(byte == 's' || stop == true){
-    brake(10000);
-      Serial.println("Stop");
-      stop = true;
-   }
-   
-   if(byte >1){
-      Serial.println((String)byte +"byte");
-   }
-   if(lichtsensor1==HIGH&&lichtsensor3==HIGH){
+   distance = sonar.ping_cm();
+   if(autonoom==true)
+   {
+    if(lichtsensor1==HIGH&&lichtsensor3==HIGH){
+      followingline=true;
        backward(1);
-   }
-   else if(lichtsensor1==HIGH&&lichtsensor3==LOW){   
+    }
+    else if(lichtsensor1==HIGH&&lichtsensor3==LOW){   
+      followingline=true;
       turnRight(1);
-   }
-   else if(lichtsensor1==LOW&&lichtsensor3==HIGH){
-    turnLeft(1);
-   }
-   else{
-    if(stop == false){
-      getDistance();
+    }
+    else if(lichtsensor1==LOW&&lichtsensor3==HIGH){
+      followingline=true;
+      turnLeft(1);
+    }
+    else{
+      if(stop == false){
+        followingline=false;
+        getDistance();
+
+      }
     }
    }
-  // put your main code here, to run repeatedly:
+   else{
+     if(ibyte=='z'||ibyte=='Z')
+     {
+      forward(10);
+      delay(100);
+     }
+     else if(ibyte=='s'|| ibyte=='S')
+     {
+      backward(10);delay(100);    
+     }
+     else if(ibyte=='q' ||ibyte=='Q'){
+       turnLeft(10);
+       delay(200);
+     }
+     else if(ibyte=='d' ||ibyte=='D'){
+       turnRight(10);
+       delay(200);
+     }
+     else
+     {
+      brake(10);
+     }
+   }
+}
+
+
+
+int speed = 255;
+void motorAOn()
+{
+ analogWrite(enableA, speed);
+}
+ 
+void motorBOn()
+{
+   digitalWrite(enableB, speed);
+}
+ 
+ //disable motors
+void motorAOff()
+{
+ digitalWrite(enableB, LOW);
+}
+ 
+void motorBOff()
+{
+   analogWrite(enableA, LOW);
+}
+
+ //motor A controls
+void motorAForward()
+{
+ digitalWrite(pinA1, HIGH);
+ digitalWrite(pinA2, LOW);
+}
+ 
+void motorABackward()
+{
+ digitalWrite(pinA1, LOW);
+ digitalWrite(pinA2, HIGH);
+}
+ 
+//motor B contorls
+void motorBForward()
+{
+ digitalWrite(pinB1, LOW);
+ digitalWrite(pinB2, HIGH);
+}
+ 
+void motorBBackward()
+{
+ digitalWrite(pinB1, HIGH);
+ digitalWrite(pinB2, LOW);
+}
+ 
+//coasting and braking
+void motorACoast()
+{
+ digitalWrite(pinA1, LOW);
+ digitalWrite(pinA2, LOW);
+}
+ 
+void motorABrake()
+{
+ digitalWrite(pinA1, HIGH);
+ digitalWrite(pinA2, HIGH);
+}
+ 
+void motorBCoast()
+{
+ digitalWrite(pinB1, LOW);
+ digitalWrite(pinB2, LOW);
+}
+ 
+void motorBBrake()
+{
+ digitalWrite(pinB1, HIGH);
+ digitalWrite(pinB2, HIGH);
+}
+ 
+//Define High Level Commands
+void enableMotors()
+{
+ motorAOn();
+ motorBOn();
+}
+ 
+void disableMotors()
+{
+ motorAOff();
+ motorBOff();
+}
+ 
+void forward(int time)
+{
+ motorAForward();
+ motorBForward();
+ delay(time);
+}
+ 
+void backward(int time)
+{
+ motorABackward();
+ motorBBackward();
+ delay(time);
+}
+ 
+void turnLeft(int time)
+{
+ motorABackward();
+ motorBForward();
+ delay(time);
+}
+ 
+void turnRight(int time)
+{
+ motorAForward();
+ motorBBackward();
+ delay(time);
+}
+ 
+void coast(int time)
+{
+ motorACoast();
+ motorBCoast();
+ delay(time);
+}
+ 
+void brake(int time)
+{
+ motorABrake();
+ motorBBrake();
+ delay(time);
+}
+
+
+int Echo(int motorstop){
+  int i=myservo.read();
+  
+  while(i!=motorstop){
+      myservo.write(i);
+      delay(15);
+
+      if(i<motorstop){
+        i++;
+      }
+      else{
+        i--;
+      }
+  }
+  
+  digitalWrite(trigPin, LOW);  // Added this line
+  delayMicroseconds(2); // Added this line
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10); // Added this line
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+
+ 
+  distance = (duration/2) / 29.1;
+  
+}
+
+void getDistance(){ 
+    
+  if ((distance >= 10) || (distance <= 0)){
+    backward(1);
+  } 
+  else {
+    turnLeft(1);
+     delay(200);
+    //if(rdistance < 10){
+       //turnRight(1);
+    //}
+    //else if(ldistance <10){      
+       //turnLeft(1);
+    //}
+    //Serial.print(distance);
+    //Serial.println(" cm");
+  }
+
+  //Serial.println("left=" + (String)ldistance +"middle="+ mdistance + "right=" + (String)rdistance);
 }
