@@ -21,7 +21,7 @@ long timerOrigin;
 
  
 bool stop = false;
-bool autonoom=true;
+bool autonoom=false;
 
 #define trigPin A0
 #define echoPin A1
@@ -69,13 +69,15 @@ void setup() {
 bool followingline = false;
 
 void loop() {
-  Serial.println("{\"autonoom\":"+String(autonoom)+",\"distance\":"+String(distance)+",\"followingline\":"+String(followingline)+"}");
+   
+   int ibyte =Serial.read();
+   
+   Serial.println("{\"autonoom\":"+String(autonoom)+",\"distance\":"+String(distance)+",\"followingline\":"+String(followingline)+"}");
    enableMotors();
    lichtsensor1 = digitalRead(7);
    lichtsensor2 = digitalRead(4);
    lichtsensor3 = digitalRead(3);
    
-   int ibyte =Serial.read();
    if(ibyte=='m' ||ibyte=='M')
    {
     autonoom=false;

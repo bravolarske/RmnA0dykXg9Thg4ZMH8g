@@ -1,5 +1,7 @@
 package be.heinenbavo.adriunorobot;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOError;
@@ -30,14 +32,21 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.Buffer;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button btnSend;
+    private Button btnSend, btnConnect;
     private EditText edtText;
+    String address = null;
+    BluetoothAdapter myBluetooth = null;
+    BluetoothSocket btSocket = null;
+    private boolean isBtConnected = false;
+    static UUID applicationUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     private static final int DISCOVER_DURATION = 300;
     private static final int REQUEST_BLU = 1;
@@ -49,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        btnConnect = (Button) findViewById(R.id.btnConnect);
         btnSend = (Button) findViewById(R.id.btnSend);
         edtText = (EditText) findViewById(R.id.edtText);
 
@@ -56,6 +66,34 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 sendViaBluetooth();
+            }
+        });
+
+        btnConnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Set<BluetoothDevice> devices = myBluetooth.getBondedDevices();
+
+                if (devices.size() != 0) {
+
+                    for (BluetoothDevice device : devices){
+
+//                        if (device.getName().equals("HC-06")){
+//                            sendDataToPairedDevice(edtText.getText().toString(), device);
+//
+//                            t
+//                            myBluetooth = BluetoothAdapter.getDefaultAdapter();
+//                            BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(device.getAddress());
+//                            btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(applicationUUID);//create a RFCOMM (SPP) connection
+//                            BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+//                            btSocket.connect();
+//                            break;
+//                        }
+                    }
+                }
+
+
             }
         });
 
@@ -72,14 +110,11 @@ public class MainActivity extends AppCompatActivity {
     private void sendViaBluetooth() {
 
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
+//wordt uitgevoerd
         if (mBluetoothAdapter == null) {
             Toast.makeText(this, "Bluetooth is not supported.", Toast.LENGTH_LONG);
         }
         else {
-            //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-
-            //enableBtIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, DISCOVER_DURATION);
 
             Set<BluetoothDevice> devices = mBluetoothAdapter.getBondedDevices();
 
@@ -93,78 +128,25 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-            //startActivityForResult(enableBtIntent, REQUEST_BLU);
         }
     }
 
     private void sendDataToPairedDevice(String message ,BluetoothDevice device) {
 
-        byte[] toSend = message.getBytes();
         try {
-            TelephonyManager tManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-            String uuid = tManager.getDeviceId();
+            myBluetooth = BluetoothAdapter.getDefaultAdapter();
+            BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(device.getAddress());
+            btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(applicationUUID);//create a RFCOMM (SPP) connection
+            BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+            btSocket.connect();
 
-            UUID applicationUUID = UUID.fromString(uuid);
-            BluetoothSocket socket = device.createInsecureRfcommSocketToServiceRecord(applicationUUID);
-            OutputStream mmOutStream = socket.getOutputStream();
-            mmOutStream.write(toSend);
-            // Your Data is sent to  BT connected paired device ENJOY.
+            btSocket.getOutputStream().write(message.getBytes());
+
         } catch (IOException e) {
             Log.e("", "Exception during write", e);
-        }
-        catch (Exception ex){
-            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
-            Log.e("", ex.toString());
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
-
-    @Override
-    public void onActivityResult(int requestcode, int resultcode, Intent data){
-
-        if (resultcode == DISCOVER_DURATION && requestcode == REQUEST_BLU){
-
-            Intent intent = new Intent();
-            intent.setAction(Intent.ACTION_SEND);
-            intent.setType("text/plain");
-
-            File file = new File(Environment.getExternalStorageDirectory(), "plop.txt");
-            intent.putExtra(Intent.EXTRA_STREAM, edtText.getText().toString());
-
-            PackageManager pm = getPackageManager();
-            List<ResolveInfo> list = pm.queryIntentActivities(intent, 0);
-
-            if (list.size() > 0){
-                String packagename = null;
-                String classname = null;
-                boolean found = false;
-
-                for (ResolveInfo info : list){
-                    packagename = info.activityInfo.packageName;
-
-                    if (packagename.equals("com.android.bluetooth")){
-
-                        classname = info.activityInfo.name;
-
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found) {
-                    Toast.makeText(this, "Bluetooth haven't been found.", Toast.LENGTH_LONG);
-                }
-                else {
-                    //sendDataToPairedDevice(edtText.getText().toString() ,bluetoothDevice);
-                    intent.setClassName(packagename, classname);
-                    startActivity(intent);
-                }
-            }
-            else {
-                Toast.makeText(this, "Bleutooth is canceled", Toast.LENGTH_LONG);
-            }
-        }
-    }
-
 
 
     @Override
