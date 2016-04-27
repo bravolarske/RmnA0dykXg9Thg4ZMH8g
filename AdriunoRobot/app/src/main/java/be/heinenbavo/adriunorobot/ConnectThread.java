@@ -57,7 +57,7 @@ public class ConnectThread extends Thread {
 
                 Log.e("Status", "Could not close!");
             }
-            //return;
+            return;
         }
         Log.e("Status", "Connected");
 
